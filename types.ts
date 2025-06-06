@@ -5,6 +5,7 @@
 export interface Prompt {
   readonly promptId: string;
   text: string;
+  displayText?: string; // 界面显示的中文文本
   weight: number;
   cc: number;
   color: string;

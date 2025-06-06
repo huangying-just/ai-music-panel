@@ -29,22 +29,22 @@ const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY, apiVersion: 'v1
 const model = 'lyria-realtime-exp';
 
 const DEFAULT_PROMPTS = [
-  { color: '#9900ff', text: '波萨诺瓦' },
-  { color: '#5200ff', text: '电波音乐' },
-  { color: '#ff25f6', text: '鼓打贝斯' },
-  { color: '#2af6de', text: '后朋克' },
-  { color: '#ffdd28', text: '鞋鞋凝视' },
-  { color: '#2af6de', text: '放克' },
-  { color: '#9900ff', text: '芯片音乐' },
-  { color: '#3dffab', text: '丰富弦乐' },
-  { color: '#d8ff3e', text: '闪亮琶音' },
-  { color: '#d9b2ff', text: '断奏节拍' },
-  { color: '#3dffab', text: '有力底鼓' },
-  { color: '#ffdd28', text: '迪斯科舞曲' },
-  { color: '#ff25f6', text: 'K-POP' },
-  { color: '#d8ff3e', text: '新灵魂乐' },
-  { color: '#5200ff', text: '神游舞曲' },
-  { color: '#d9b2ff', text: '激流金属' },
+  { color: '#9900ff', text: 'Bossa Nova', displayText: '波萨诺瓦' },
+  { color: '#5200ff', text: 'Synthwave', displayText: '电波音乐' },
+  { color: '#ff25f6', text: 'Drum and Bass', displayText: '鼓打贝斯' },
+  { color: '#2af6de', text: 'Post Punk', displayText: '后朋克' },
+  { color: '#ffdd28', text: 'Shoegaze', displayText: '鞋履凝视' },
+  { color: '#2af6de', text: 'Funk', displayText: '放克' },
+  { color: '#9900ff', text: 'Chiptune', displayText: '芯片音乐' },
+  { color: '#3dffab', text: 'Rich Strings', displayText: '丰富弦乐' },
+  { color: '#d8ff3e', text: 'Sparkling Arpeggios', displayText: '闪亮琶音' },
+  { color: '#d9b2ff', text: 'Staccato Beats', displayText: '断奏节拍' },
+  { color: '#3dffab', text: 'Powerful Kick Drum', displayText: '有力底鼓' },
+  { color: '#ffdd28', text: 'Disco', displayText: '迪斯科' },
+  { color: '#ff25f6', text: 'K-POP', displayText: 'K-POP' },
+  { color: '#d8ff3e', text: 'Neo Soul', displayText: '新灵魂乐' },
+  { color: '#5200ff', text: 'Trance', displayText: '神游舞曲' },
+  { color: '#d9b2ff', text: 'Thrash Metal', displayText: '激流金属' },
 ];
 
 /** The grid of prompt inputs. */
@@ -145,6 +145,30 @@ class PromptDjMidi extends LitElement {
       transition: all 0.2s ease;
       font-size: 24px;
       color: #fff;
+    }
+    
+    .restart-button {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(145deg, #ff6b35, #e55a30);
+      box-shadow: 
+        0 3px 6px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      font-size: 16px;
+      color: #fff;
+    }
+    
+    .restart-button:disabled {
+      background: linear-gradient(145deg, #666, #444);
+      cursor: not-allowed;
+      opacity: 0.5;
     }
     
     .play-button:hover {
@@ -332,10 +356,15 @@ class PromptDjMidi extends LitElement {
   }
 
   private getPromptsToSend() {
-    return Array.from(this.prompts.values())
-      .filter((p) => {
-        return !this.filteredPrompts.has(p.text) && p.weight !== 0;
-      })
+    const allPrompts = Array.from(this.prompts.values());
+    const filteredPrompts = allPrompts.filter((p) => {
+      return !this.filteredPrompts.has(p.text) && p.weight !== 0;
+    });
+    
+    console.log('所有提示权重状态:', allPrompts.map(p => `${p.text}=${p.weight}`).join(', '));
+    console.log('过滤后发送的提示:', filteredPrompts.map(p => `${p.text}=${p.weight}`).join(', '));
+    
+    return filteredPrompts;
   }
 
   private setSessionPrompts = throttle(async () => {
@@ -347,16 +376,32 @@ class PromptDjMidi extends LitElement {
       return;
     }
     try {
+      const startTime = Date.now();
+      
+      // 强制重新开始音乐生成以应用新权重
+      if (this.playbackState === 'playing') {
+        console.log('强制重启音乐生成以应用新权重');
+        await this.session.stop();
+        this.nextStartTime = 0;
+        
+        // 稍等一下再重新开始
+        await new Promise(resolve => setTimeout(resolve, 100));
+        await this.session.play();
+      }
+      
       await this.session.setWeightedPrompts({
         weightedPrompts: promptsToSend,
       });
-      console.log('成功发送权重提示到AI');
+      
+      const endTime = Date.now();
+      console.log(`成功发送权重提示到AI，耗时: ${endTime - startTime}ms`);
+      console.log('发送的权重数据详情:', JSON.stringify(promptsToSend, null, 2));
     } catch (e) {
       console.error('发送权重提示失败:', e);
       this.toastMessage.show((e as Error).message)
       this.pause();
     }
-  }, 200);
+  }, 300); // 增加节流时间以避免过于频繁的重启
 
   private updateAudioLevel() {
     this.audioLevelRafId = requestAnimationFrame(this.updateAudioLevel);
@@ -394,6 +439,14 @@ class PromptDjMidi extends LitElement {
     this.prompts = newPrompts;
     this.requestUpdate();
     this.dispatchPromptsChange();
+    
+    // 如果正在播放，强制重新开始音乐生成以应用新权重
+    if (this.playbackState === 'playing') {
+      console.log('强制刷新音乐生成以应用新权重');
+      setTimeout(() => {
+        this.nextStartTime = this.audioContext.currentTime + 0.5; // 短暂延迟后应用新权重
+      }, 50);
+    }
   }
 
   /** Generates radial gradients for each prompt based on weight and color. */
@@ -473,6 +526,33 @@ class PromptDjMidi extends LitElement {
       this.stop();
     }
     console.debug('处理播放暂停');
+  }
+
+  private async forceRestart() {
+    if (this.playbackState !== 'playing') return;
+    
+    console.log('用户手动强制重启音乐生成');
+    this.toastMessage.show('正在重启音乐生成以应用新权重...');
+    
+    try {
+      // 停止当前播放
+      await this.session.stop();
+      this.nextStartTime = 0;
+      this.playbackState = 'loading';
+      
+      // 等待一下
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // 重新发送权重并开始播放
+      await this.setSessionPrompts();
+      await this.session.play();
+      
+      console.log('手动重启完成');
+    } catch (e) {
+      console.error('手动重启失败:', e);
+      this.toastMessage.show('重启失败，请尝试重新播放');
+      this.playbackState = 'stopped';
+    }
   }
 
   private async toggleShowMidi() {
@@ -557,6 +637,13 @@ class PromptDjMidi extends LitElement {
             title=${this.playbackState === 'playing' ? '暂停' : '播放'}>
             ${this.getPlayButtonIcon()}
           </button>
+          <button 
+            class="restart-button" 
+            @click=${this.forceRestart}
+            title="强制重启以应用新权重"
+            ?disabled=${this.playbackState !== 'playing'}>
+            🔄
+          </button>
           <volume-control 
             .volume=${this.volume} 
             .muted=${this.muted}
@@ -576,6 +663,7 @@ class PromptDjMidi extends LitElement {
         filtered=${this.filteredPrompts.has(prompt.text)}
         cc=${prompt.cc}
         text=${prompt.text}
+        displayText=${prompt.displayText || prompt.text}
         weight=${prompt.weight}
         color=${prompt.color}
         .midiDispatcher=${this.midiDispatcher}
@@ -628,10 +716,11 @@ function buildDefaultPrompts() {
   for (let i = 0; i < DEFAULT_PROMPTS.length; i++) {
     const promptId = `prompt-${i}`;
     const prompt = DEFAULT_PROMPTS[i];
-    const { text, color } = prompt;
+    const { text, color, displayText } = prompt;
     prompts.set(promptId, {
       promptId,
       text,
+      displayText,
       weight: startOn.includes(prompt) ? 1 : 0,
       cc: i,
       color,

@@ -103,6 +103,7 @@ export class WeightFader extends LitElement {
       background: #111;
       border: 1px solid #444;
       border-radius: 2px;
+      transition: opacity 0.2s ease;
     }
     
     .level-fill {
@@ -111,7 +112,7 @@ export class WeightFader extends LitElement {
       width: 100%;
       background: linear-gradient(0deg, #0f0 0%, #ff0 70%, #f00 100%);
       border-radius: 1px;
-      transition: height 0.05s ease;
+      transition: height 0.05s ease, opacity 0.2s ease;
     }
     
     .value-display {
@@ -154,9 +155,9 @@ export class WeightFader extends LitElement {
     
     const containerHeight = 134; // 150px - 16px padding
     const delta = this.dragStartPos - e.clientY;
-    const valueChange = (delta / containerHeight) * 2;
+    const valueChange = (delta / containerHeight) * 4; // 增加权重范围到4
     
-    this.value = Math.max(0, Math.min(2, this.dragStartValue + valueChange));
+    this.value = Math.max(0, Math.min(4, this.dragStartValue + valueChange)); // 最大值改为4
     this.dispatchEvent(new CustomEvent<number>('input', { detail: this.value }));
   }
 
@@ -170,14 +171,17 @@ export class WeightFader extends LitElement {
   private handleWheel(e: WheelEvent) {
     e.preventDefault();
     const delta = e.deltaY;
-    this.value = Math.max(0, Math.min(2, this.value + delta * -0.005));
+    this.value = Math.max(0, Math.min(4, this.value + delta * -0.01)); // 增加最大值和滚轮敏感度
     this.dispatchEvent(new CustomEvent<number>('input', { detail: this.value }));
   }
 
   override render() {
-    const valuePercent = (this.value / 2) * 100;
+    const valuePercent = (this.value / 4) * 100; // 更新百分比计算，基于新的最大值4
     const handleTop = 150 - 16 - (valuePercent / 100) * 134; // 150px container - 16px handle - track
-    const levelPercent = Math.min(100, this.audioLevel * 100);
+    
+    // 只有当权重大于0时才显示音量波动，否则显示为0
+    const isActive = this.value > 0;
+    const levelPercent = isActive ? Math.min(100, this.audioLevel * 100) : 0;
     
     const fillStyle = styleMap({
       background: this.color,
@@ -192,8 +196,13 @@ export class WeightFader extends LitElement {
       height: `${levelPercent}%`,
     });
 
+    const levelIndicatorStyle = styleMap({
+      // 未激活时让整个音量指示条变暗
+      opacity: isActive ? '1' : '0.2',
+    });
+
     return html`
-      <div class="value-display">${Math.round(this.value * 50)}</div>
+      <div class="value-display">${Math.round(this.value * 25)}</div>
       <div class="fader-container" @wheel=${this.handleWheel}>
         <div class="fader-scale">
           <div class="scale-mark"></div>
@@ -210,7 +219,7 @@ export class WeightFader extends LitElement {
           style=${handleStyle}
           @pointerdown=${this.handlePointerDown}
         ></div>
-        <div class="level-indicator">
+        <div class="level-indicator" style=${levelIndicatorStyle}>
           <div class="level-fill" style=${levelStyle}></div>
         </div>
       </div>

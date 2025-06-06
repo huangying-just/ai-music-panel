@@ -93,6 +93,7 @@ export class PromptController extends LitElement {
 
   @property({ type: String }) promptId = '';
   @property({ type: String }) text = '';
+  @property({ type: String }) displayText = '';
   @property({ type: Number }) weight = 0;
   @property({ type: String }) color = '';
 
@@ -135,7 +136,8 @@ export class PromptController extends LitElement {
     this.textInput.setAttribute('contenteditable', 'plaintext-only');
 
     // contenteditable will do weird things if this is part of the template.
-    this.textInput.textContent = this.text;
+    // 显示中文displayText，但编辑时使用英文text
+    this.textInput.textContent = this.displayText || this.text;
     this.lastValidText = this.text;
   }
 
@@ -143,8 +145,9 @@ export class PromptController extends LitElement {
     if (changedProperties.has('showCC') && !this.showCC) {
       this.learnMode = false;
     }
-    if (changedProperties.has('text') && this.textInput) {
-      this.textInput.textContent = this.text;
+    if ((changedProperties.has('text') || changedProperties.has('displayText')) && this.textInput) {
+      // 优先显示中文displayText，没有则显示英文text
+      this.textInput.textContent = this.displayText || this.text;
     }
     super.update(changedProperties);
   }
