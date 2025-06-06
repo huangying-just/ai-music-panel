@@ -1,5 +1,7 @@
 # 运行和部署您的 AI Studio 音乐应用
 
+![Music Console](music-console.jpg)
+
 这包含了在本地运行应用所需的一切。
 
 ## 本地运行
