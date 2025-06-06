@@ -150,6 +150,7 @@ export class PromptController extends LitElement {
   }
 
   private dispatchPromptChange() {
+    console.log(`发送权重变更事件: ${this.text} = ${this.weight}`);
     this.dispatchEvent(
       new CustomEvent<Prompt>('prompt-changed', {
         detail: {
@@ -187,6 +188,7 @@ export class PromptController extends LitElement {
 
   private updateWeight() {
     this.weight = this.weightInput.value;
+    console.log(`权重更新: ${this.text} = ${this.weight}`);
     this.dispatchPromptChange();
   }
 

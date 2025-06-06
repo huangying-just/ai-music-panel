@@ -340,6 +340,7 @@ class PromptDjMidi extends LitElement {
 
   private setSessionPrompts = throttle(async () => {
     const promptsToSend = this.getPromptsToSend();
+    console.log(`发送权重提示到AI: `, promptsToSend.map(p => `${p.text}=${p.weight}`).join(', '));
     if (promptsToSend.length === 0) {
       this.toastMessage.show('There needs to be one active prompt to play.')
       this.pause();
@@ -349,8 +350,10 @@ class PromptDjMidi extends LitElement {
       await this.session.setWeightedPrompts({
         weightedPrompts: promptsToSend,
       });
+      console.log('成功发送权重提示到AI');
     } catch (e) {
-      this.toastMessage.show(e.message)
+      console.error('发送权重提示失败:', e);
+      this.toastMessage.show((e as Error).message)
       this.pause();
     }
   }, 200);
@@ -369,6 +372,7 @@ class PromptDjMidi extends LitElement {
 
   private handlePromptChanged(e: CustomEvent<Prompt>) {
     const { promptId, text, weight, cc } = e.detail;
+    console.log(`主应用接收权重变更: ${text} = ${weight}`);
     const prompt = this.prompts.get(promptId);
 
     if (!prompt) {
