@@ -69,7 +69,30 @@ server: {
 - **网络模式**：bridge
 - **环境变量**：`GEMINI_API_KEY=your_key`
 
-#### 3. 其他部署平台
+#### 3. 域名配置
+
+**问题现象：**
+- 绑定域名后出现 "This host is not allowed" 错误
+- 反向代理配置正确但无法访问
+
+**解决方案：**
+在 `vite.config.ts` 中配置允许的主机：
+
+```javascript
+// vite.config.ts
+server: {
+  host: '0.0.0.0',
+  port: 5173,
+  allowedHosts: ['music.cflp.ai', 'localhost', '127.0.0.1']  // 添加您的域名
+}
+```
+
+**重要提醒：**
+- 修改配置后需要重启服务
+- 可以添加多个域名到 `allowedHosts` 数组
+- 保留 `localhost` 用于本地开发
+
+#### 4. 其他部署平台
 
 **VPS 部署：**
 ```bash
@@ -234,6 +257,13 @@ A:
 2. 确认事件监听是否正常
 3. 尝试刷新页面
 
+**Q: 域名访问提示 "This host is not allowed"？**
+A: 
+1. 在 `vite.config.ts` 中添加域名到 `allowedHosts` 数组
+2. 重启服务使配置生效
+3. 清除浏览器缓存重新访问
+4. 检查反向代理配置是否正确
+
 ## 开发说明
 
 ### 调试模式
@@ -249,6 +279,12 @@ A:
 - MIDI 功能扩展：修改 `MidiDispatcher` 类
 
 ## 更新日志
+
+### v1.2.1 (2025-01-08)
+- 🌐 新增域名访问支持
+- ⚙️ 添加 `allowedHosts` 配置选项
+- 📖 完善域名部署文档
+- 🔧 修复反向代理访问问题
 
 ### v1.2.0 (2025-01-08)
 - ✨ 新增双语界面支持
