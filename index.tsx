@@ -241,6 +241,28 @@ class PromptDjMidi extends LitElement {
       prompt-controller {
         flex: 0 0 calc(50% - 6px);
       }
+      
+      .mobile-hint {
+        display: block !important;
+        margin-top: 5px;
+      }
+      
+      #transport-controls {
+        flex-wrap: wrap;
+        gap: 15px;
+      }
+      
+      .play-button {
+        width: 50px;
+        height: 50px;
+        font-size: 20px;
+      }
+      
+      .restart-button {
+        width: 35px;
+        height: 35px;
+        font-size: 14px;
+      }
     }
     
     @media only screen and (max-width: 480px) {
@@ -249,6 +271,29 @@ class PromptDjMidi extends LitElement {
       }
       #grid {
         gap: 8px;
+        padding: 15px;
+      }
+      
+      #console-container {
+        padding: 15px;
+        margin: 10px;
+      }
+      
+      #transport-controls {
+        padding: 15px;
+        gap: 10px;
+      }
+      
+      .play-button {
+        width: 45px;
+        height: 45px;
+        font-size: 18px;
+      }
+      
+      .restart-button {
+        width: 30px;
+        height: 30px;
+        font-size: 12px;
       }
     }
   `;
@@ -298,6 +343,13 @@ class PromptDjMidi extends LitElement {
   }
 
   override async firstUpdated() {
+    // 检测移动端设备
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    if (isMobile) {
+      console.log('检测到移动端设备，已启用移动端优化');
+      this.toastMessage.show('移动端用户：请点击播放按钮开始使用音频功能');
+    }
+    
     await this.connectToSession();
     await this.setSessionPrompts();
   }
@@ -514,6 +566,18 @@ class PromptDjMidi extends LitElement {
   }
 
   private async handlePlayPause() {
+    // 移动端音频上下文激活
+    if (this.audioContext.state === 'suspended') {
+      try {
+        await this.audioContext.resume();
+        console.log('音频上下文已激活');
+      } catch (e) {
+        console.error('激活音频上下文失败:', e);
+        this.toastMessage.show('无法启动音频，请检查浏览器权限');
+        return;
+      }
+    }
+
     if (this.playbackState === 'playing') {
       this.pause();
     } else if (this.playbackState === 'paused' || this.playbackState === 'stopped') {
@@ -626,6 +690,9 @@ class PromptDjMidi extends LitElement {
       <div id="console-container">
         <div id="console-header">
           <h1 id="console-title">🎵 AI 音乐控制台</h1>
+          <div class="mobile-hint" style="display: none; font-size: 12px; color: #888; text-align: center;">
+            移动端提示：长按推子可调节音乐风格强度
+          </div>
         </div>
         
         <div id="grid">${this.renderPrompts()}</div>

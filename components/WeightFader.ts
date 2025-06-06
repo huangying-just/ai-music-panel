@@ -145,7 +145,13 @@ export class WeightFader extends LitElement {
     this.dragStartPos = e.clientY;
     this.dragStartValue = this.value;
     document.body.classList.add('dragging');
-    window.addEventListener('pointermove', this.handlePointerMove);
+    
+    // 移动端触摸优化
+    document.body.style.userSelect = 'none';
+    document.body.style.webkitUserSelect = 'none';
+    document.body.style.touchAction = 'none';
+    
+    window.addEventListener('pointermove', this.handlePointerMove, { passive: false });
     window.addEventListener('pointerup', this.handlePointerUp);
     e.preventDefault();
   }
@@ -166,6 +172,11 @@ export class WeightFader extends LitElement {
     window.removeEventListener('pointermove', this.handlePointerMove);
     window.removeEventListener('pointerup', this.handlePointerUp);
     document.body.classList.remove('dragging');
+    
+    // 恢复移动端样式
+    document.body.style.userSelect = '';
+    document.body.style.webkitUserSelect = '';
+    document.body.style.touchAction = '';
   }
 
   private handleWheel(e: WheelEvent) {
