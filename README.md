@@ -2,7 +2,20 @@
 
 ![Music Console](music-console.jpg)
 
+
+
 一个基于 Google Gemini AI 的实时音乐生成控制台，支持通过推子和 MIDI 控制器实时调节音乐风格。
+
+## 🎵 音乐演示
+
+以下是使用AI音乐控制台录制的示例音频：
+
+<audio controls style="width: 100%; max-width: 600px;">
+  <source src="ai-music-2025-06-07T00-29-59.webm" type="audio/webm">
+  您的浏览器不支持音频播放。
+</audio>
+
+*演示音频：混合了波萨诺瓦、电波音乐和放克风格的AI生成音乐*
 
 ## 快速开始
 
