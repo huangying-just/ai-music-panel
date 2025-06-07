@@ -171,6 +171,59 @@ class PromptDjMidi extends LitElement {
       opacity: 0.5;
     }
     
+    .record-button {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(145deg, #ff1744, #c51162);
+      box-shadow: 
+        0 4px 8px rgba(0,0,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      font-size: 18px;
+      color: #fff;
+      position: relative;
+    }
+    
+    .record-button.recording {
+      background: linear-gradient(145deg, #4caf50, #388e3c);
+      animation: pulse-record 1.5s infinite;
+    }
+    
+    .record-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 
+        0 6px 12px rgba(0,0,0,0.4),
+        inset 0 1px 0 rgba(255,255,255,0.1);
+    }
+    
+    .record-button:active {
+      transform: translateY(0);
+    }
+    
+    .record-duration {
+      position: absolute;
+      top: -25px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 10px;
+      color: #fff;
+      background: rgba(0,0,0,0.7);
+      padding: 2px 6px;
+      border-radius: 10px;
+      white-space: nowrap;
+    }
+    
+    @keyframes pulse-record {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    
     .play-button:hover {
       background: linear-gradient(145deg, #666, #444);
       transform: translateY(-1px);
@@ -316,6 +369,14 @@ class PromptDjMidi extends LitElement {
   @state() private activeMidiInputId: string | null = null;
   @state() private volume = 0.8;
   @state() private muted = false;
+  
+  // Recording state
+  @state() private isRecording = false;
+  @state() private recordingDuration = 0;
+  private mediaRecorder: MediaRecorder | null = null;
+  private recordedChunks: Blob[] = [];
+  private recordingTimer: number | null = null;
+  private recordingDestination: MediaStreamAudioDestinationNode | null = null;
 
   @property({ type: Object })
   private filteredPrompts = new Set<string>();
@@ -336,6 +397,11 @@ class PromptDjMidi extends LitElement {
     this.audioAnalyser = new AudioAnalyser(this.audioContext);
     this.audioAnalyser.node.connect(this.audioContext.destination);
     this.outputNode.connect(this.audioAnalyser.node);
+    
+    // Initialize recording destination
+    this.recordingDestination = this.audioContext.createMediaStreamDestination();
+    this.outputNode.connect(this.recordingDestination);
+    
     // 设置初始音量
     this.outputNode.gain.setValueAtTime(this.volume, this.audioContext.currentTime);
     this.updateAudioLevel = this.updateAudioLevel.bind(this);
@@ -647,6 +713,103 @@ class PromptDjMidi extends LitElement {
     this.outputNode.gain.setValueAtTime(effectiveVolume, this.audioContext.currentTime);
   }
 
+  // Recording methods
+  private async startRecording() {
+    if (!this.recordingDestination) {
+      this.toastMessage.show('录制功能初始化失败');
+      return;
+    }
+
+    try {
+      const stream = this.recordingDestination.stream;
+      this.mediaRecorder = new MediaRecorder(stream, {
+        mimeType: 'audio/webm;codecs=opus'
+      });
+      
+      this.recordedChunks = [];
+      this.recordingDuration = 0;
+      
+      this.mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          this.recordedChunks.push(event.data);
+        }
+      };
+      
+      this.mediaRecorder.onstop = () => {
+        this.downloadRecording();
+      };
+      
+      this.mediaRecorder.start();
+      this.isRecording = true;
+      
+      // Start recording timer
+      this.recordingTimer = window.setInterval(() => {
+        this.recordingDuration++;
+        this.requestUpdate();
+      }, 1000);
+      
+      this.toastMessage.show('开始录制音乐...');
+      console.log('Recording started');
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+      this.toastMessage.show('录制启动失败');
+    }
+  }
+  
+  private stopRecording() {
+    if (this.mediaRecorder && this.isRecording) {
+      this.mediaRecorder.stop();
+      this.isRecording = false;
+      
+      if (this.recordingTimer) {
+        clearInterval(this.recordingTimer);
+        this.recordingTimer = null;
+      }
+      
+      console.log('Recording stopped');
+    }
+  }
+  
+  private downloadRecording() {
+    if (this.recordedChunks.length === 0) {
+      this.toastMessage.show('没有录制到音频数据');
+      return;
+    }
+    
+    const blob = new Blob(this.recordedChunks, { type: 'audio/webm' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+    
+    a.href = url;
+    a.download = `ai-music-${timestamp}.webm`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    this.toastMessage.show(`录制完成！已下载 ${this.formatDuration(this.recordingDuration)} 的音频`);
+    this.recordingDuration = 0;
+  }
+  
+  private async toggleRecording() {
+    if (this.isRecording) {
+      this.stopRecording();
+    } else {
+      if (this.playbackState !== 'playing') {
+        this.toastMessage.show('请先开始播放音乐再进行录制');
+        return;
+      }
+      await this.startRecording();
+    }
+  }
+  
+  private formatDuration(seconds: number): string {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  }
+
   private getPlayButtonIcon() {
     switch (this.playbackState) {
       case 'playing':
@@ -710,6 +873,13 @@ class PromptDjMidi extends LitElement {
             title="强制重启以应用新权重"
             ?disabled=${this.playbackState !== 'playing'}>
             🔄
+          </button>
+          <button 
+            class="record-button ${this.isRecording ? 'recording' : ''}" 
+            @click=${this.toggleRecording}
+            title=${this.isRecording ? '停止录制' : '开始录制音乐'}>
+            ${this.isRecording ? '⏹️' : '🎙️'}
+            ${this.isRecording ? html`<div class="record-duration">${this.formatDuration(this.recordingDuration)}</div>` : ''}
           </button>
           <volume-control 
             .volume=${this.volume} 
