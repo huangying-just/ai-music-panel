@@ -8,7 +8,21 @@
 
 一个基于 Google Gemini AI 的实时音乐生成控制台，支持通过推子和 MIDI 控制器实时调节音乐风格。
 
-## 🎵 音乐演示
+## 🎵 演示内容
+
+### 🎬 视频演示
+
+以下是AI音乐控制台的操作演示视频：
+
+<video controls style="width: 100%; max-width: 600px; margin-bottom: 20px;">
+  <source src="2025-06-07 09-18-23.mov" type="video/quicktime">
+  <source src="2025-06-07 09-18-23.mov" type="video/mp4">
+  您的浏览器不支持视频播放。
+</video>
+
+*演示视频：展示AI音乐控制台的实时操作和音乐风格切换*
+
+### 🎵 音频演示
 
 以下是使用AI音乐控制台录制的示例音频：
 

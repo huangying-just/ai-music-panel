@@ -6,7 +6,21 @@
 
 A real-time music generation console based on Google Gemini AI, supporting real-time music style adjustment through faders and MIDI controllers.
 
-## 🎵 Music Demo
+## 🎵 Demo Content
+
+### 🎬 Video Demo
+
+Operation demonstration video of the AI Music Console:
+
+<video controls style="width: 100%; max-width: 600px; margin-bottom: 20px;">
+  <source src="2025-06-07 09-18-23.mov" type="video/quicktime">
+  <source src="2025-06-07 09-18-23.mov" type="video/mp4">
+  Your browser does not support video playback.
+</video>
+
+*Demo video: Shows real-time operation and music style switching of the AI Music Console*
+
+### 🎵 Audio Demo
 
 Here's a sample audio recorded using the AI Music Panel:
 
