@@ -2,6 +2,8 @@
 
 ![Music Console](music-console.jpg)
 
+> English Version | [中文版本](README.md)
+
 A real-time music generation console based on Google Gemini AI, supporting real-time music style adjustment through faders and MIDI controllers.
 
 ## 🎵 Music Demo

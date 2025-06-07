@@ -2,6 +2,8 @@
 
 ![Music Console](music-console.jpg)
 
+> [English Version](README_EN.md) | 中文版本
+
 
 
 一个基于 Google Gemini AI 的实时音乐生成控制台，支持通过推子和 MIDI 控制器实时调节音乐风格。
